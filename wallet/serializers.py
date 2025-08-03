@@ -25,8 +25,6 @@ class OperationSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         wallet_id = self.context["view"].kwargs.get("id")
-        if not wallet_id:
-            raise serializers.ValidationError({"detail": "Не указан кошелек"})
 
         try:
             wallet = Wallet.objects.get(id=wallet_id)

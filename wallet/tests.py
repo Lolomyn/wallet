@@ -1,8 +1,8 @@
 from django.test import TestCase
-from rest_framework.test import APITestCase
 from rest_framework import status
+from rest_framework.test import APITestCase
 
-from wallet.models import Wallet, Operation
+from wallet.models import Operation, Wallet
 
 
 class WalletTestCase(APITestCase):
@@ -85,7 +85,7 @@ class OperationTestCase(APITestCase):
         self.assertEqual(response.data["amount"][0], "Сумма должна быть положительной")
 
     def test_create_operation_with_incorrect_amount(self):
-        data = {"operation_type": "withdraw", "amount": 'something wrong'}
+        data = {"operation_type": "withdraw", "amount": "something wrong"}
 
         response = self.client.post(
             f"/api/v1/wallets/{self.wallet.id}/operation/",

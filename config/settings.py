@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "wallet",
     "users",
     "rest_framework",
+    "drf_yasg",
 ]
 
 REST_FRAMEWORK = {

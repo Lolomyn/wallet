@@ -1,6 +1,7 @@
 import uuid
-
 from django.db import models
+from django.db import transaction
+from django.db.models import F
 
 
 class Wallet(models.Model):
@@ -48,15 +49,23 @@ class Operation(models.Model):
         return f"Operation: {self.operation_type} - amount: {self.amount}"
 
     def save(self, *args, **kwargs):
-        if self.operation_type == self.DEPOSIT:
-            self.wallet.balance += self.amount
+        # Применяем изменение баланса только при создании операции
+        is_creating = self._state.adding
+        if is_creating:
+            with transaction.atomic():
+                # Блокируем строку кошелька для корректной конкуррентной работы
+                locked_wallet = Wallet.objects.select_for_update().get(pk=self.wallet_id)
 
-        elif self.operation_type == self.WITHDRAW:
-            if self.wallet.balance < self.amount:
-                raise ValueError("Недостаточно средств")
-            self.wallet.balance -= self.amount
-
-        self.wallet.save()
+                if self.operation_type == self.DEPOSIT:
+                    Wallet.objects.filter(pk=locked_wallet.pk).update(
+                        balance=F("balance") + self.amount
+                    )
+                elif self.operation_type == self.WITHDRAW:
+                    if locked_wallet.balance < self.amount:
+                        raise ValueError("Недостаточно средств")
+                    Wallet.objects.filter(pk=locked_wallet.pk).update(
+                        balance=F("balance") - self.amount
+                    )
         super().save(*args, **kwargs)
 
     class Meta:
